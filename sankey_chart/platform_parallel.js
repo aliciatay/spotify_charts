@@ -292,7 +292,7 @@ function createParallelPlot(data, percentile = 0) {
 // Load and process data
 async function loadData() {
     try {
-        const response = await fetch('final_df_cleaned.csv');
+        const response = await fetch('../final_df_cleaned.csv');
         const text = await response.text();
         const rows = d3.csvParse(text);
 

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Spotify Hit Analysis - Parallel Coordinates</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        #visualization {
+            width: 100%;
+            height: 600px;
+            margin-bottom: 20px;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .legend-color.hit {
+            background-color: #1DB954;  /* Spotify green */
+        }
+        .legend-color.non-hit {
+            background-color: #E0E0E0;  /* Light gray */
+        }
+        .axis line,
+        .axis path {
+            stroke: #ccc;
+        }
+        .axis text {
+            font-size: 12px;
+        }
+        .brush .extent {
+            fill-opacity: .3;
+            stroke: #fff;
+            stroke-width: 1px;
+        }
+        .line {
+            fill: none;
+            stroke-width: 1.5px;
+        }
+        .line.hit {
+            stroke: #1DB954;
+            opacity: 0.7;
+        }
+        .line.non-hit {
+            stroke: #E0E0E0;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spotify Hit Analysis - Parallel Coordinates</h1>
+        <div class="description">
+            <p>This visualization shows the relationship between various audio features and platform success.
+               A song is considered a "Hit" if it performs well on 5 or more platforms.</p>
+        </div>
+        <div id="visualization"></div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color hit"></div>
+                <span>Hit (5+ platforms)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color non-hit"></div>
+                <span>Non-hit</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Set the dimensions and margins of the visualization
+        const margin = {top: 30, right: 50, bottom: 30, left: 50};
+        const width = 1100 - margin.left - margin.right;
+        const height = 600 - margin.top - margin.bottom;
+
+        // Create the SVG container
+        const svg = d3.select("#visualization")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Load the data
+        d3.csv("../final_df_cleaned.csv").then(function(data) {
+            // Process the data
+            const processedData = data.map(d => {
+                // Calculate if song is a hit (5 or more platforms)
+                const hitCount = [
+                    d.Spotify_Hit === "True",
+                    d.YouTube_Hit === "True",
+                    d.TikTok_Hit === "True",
+                    d.Apple_Music_Hit === "True",
+                    d.SiriusXM_Hit === "True",
+                    d.Deezer_Hit === "True",
+                    d.Amazon_Hit === "True",
+                    d.Pandora_Hit === "True",
+                    d.Shazam_Hit === "True"
+                ].filter(Boolean).length;
+
+                return {
+                    track_name: d.track_name,
+                    isHit: hitCount >= 5,
+                    danceability: +d.danceability,
+                    energy: +d.energy,
+                    valence: +d.valence,
+                    tempo: +d.tempo_x,
+                    loudness: +d.loudness,
+                    acousticness: +d.acousticness,
+                    instrumentalness: +d.instrumentalness,
+                    beat_strength: +d.beat_strength,
+                    harmonic_to_percussive: +d.harmonic_to_percussive_ratio
+                };
+            });
+
+            // Define the features to display
+            const features = [
+                "danceability",
+                "energy",
+                "valence",
+                "tempo",
+                "loudness",
+                "acousticness",
+                "instrumentalness",
+                "beat_strength",
+                "harmonic_to_percussive"
+            ];
+
+            // Create scales for each feature
+            const scales = {};
+            features.forEach(feature => {
+                scales[feature] = d3.scaleLinear()
+                    .domain(d3.extent(processedData, d => d[feature]))
+                    .range([height, 0]);
+            });
+
+            // Create axes
+            const axes = {};
+            features.forEach((feature, i) => {
+                const x = (width / (features.length - 1)) * i;
+                
+                // Add axis
+                axes[feature] = svg.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", `translate(${x},0)`)
+                    .call(d3.axisLeft(scales[feature]));
+
+                // Add feature label
+                svg.append("text")
+                    .attr("class", "axis-label")
+                    .attr("transform", `translate(${x},${height + margin.bottom})`)
+                    .attr("text-anchor", "middle")
+                    .text(feature.replace(/_/g, " "));
+            });
+
+            // Draw the lines
+            processedData.forEach(d => {
+                const lineData = features.map((f, i) => {
+                    return {
+                        x: (width / (features.length - 1)) * i,
+                        y: scales[f](d[f])
+                    };
+                });
+                
+                const line = d3.line()
+                    .x(d => d.x)
+                    .y(d => d.y);
+                
+                svg.append("path")
+                    .datum(lineData)
+                    .attr("class", `line ${d.isHit ? "hit" : "non-hit"}`)
+                    .attr("d", line)
+                    .append("title")
+                    .text(d.track_name);
+            });
+        });
+    </script>
+</body>
+</html> 

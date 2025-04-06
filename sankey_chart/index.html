@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Spotify Multi-Platform Hits Analysis - Genre Distribution</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Platform-Genre Distribution</h1>
+        <div class="description">
+            <p>This visualization shows how different music genres perform across streaming platforms using a Sankey diagram.</p>
+            <p>The width of each connection represents the number of songs from that genre that are hits on the platform.</p>
+        </div>
+        
+        <div class="controls">
+            <label for="platform-selector">Filter by Platform:</label>
+            <select id="platform-selector">
+                <option value="all" selected>All Platforms</option>
+                <option value="Spotify">Spotify</option>
+                <option value="YouTube">YouTube</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Apple_Music">Apple Music</option>
+                <option value="SiriusXM">SiriusXM</option>
+                <option value="Deezer">Deezer</option>
+                <option value="Amazon">Amazon</option>
+                <option value="Pandora">Pandora</option>
+                <option value="Shazam">Shazam</option>
+            </select>
+        </div>
+        
+        <div id="visualization"></div>
+    </div>
+    
+    <script src="js/load_data.js"></script>
+    <script src="js/process_data.js"></script>
+    <script src="js/visualization.js"></script>
+</body>
+</html> 

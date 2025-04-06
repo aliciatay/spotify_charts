@@ -1,41 +1,170 @@
 <!DOCTYPE html>
+<!-- Updated version with brushing and improved interactivity -->
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Spotify Multi-Platform Hits Analysis - Genre Distribution</title>
+    <title>Cross-Platform Performance - Parallel Coordinates</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
-    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .explanation {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        label {
+            font-weight: bold;
+        }
+        select {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .back-btn {
+            background-color: #666;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background-color: #555;
+        }
+        #parallel-plot {
+            margin: 0 auto;
+        }
+        .axis .domain {
+            stroke: #ddd;
+        }
+        .axis text {
+            font-size: 12px;
+        }
+        .background-line {
+            fill: none;
+            stroke: #ddd;
+            stroke-width: 1px;
+            opacity: 0.1;
+        }
+        .foreground-line {
+            fill: none;
+            stroke: #4682b4;
+            stroke-width: 1.5px;
+            opacity: 0.5;
+        }
+        .foreground-line:hover {
+            stroke: #ff4444;
+            stroke-width: 3px;
+            opacity: 1;
+        }
+        .axis-label {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        #tooltip {
+            position: absolute;
+            display: none;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            pointer-events: none;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .brush .selection {
+            fill: rgba(70, 130, 180, 0.1);
+            stroke: #4682b4;
+        }
+        .threshold-line {
+            stroke: #ff4444;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Platform-Genre Distribution</h1>
-        <div class="description">
-            <p>This visualization shows how different music genres perform across streaming platforms using a Sankey diagram.</p>
-            <p>The width of each connection represents the number of songs from that genre that are hits on the platform.</p>
+        <h1 class="title">Cross-Platform Performance Analysis</h1>
+        
+        <div class="explanation">
+            <h2>Understanding Cross-Platform Success</h2>
+            <p>This parallel coordinates plot shows how songs perform across different streaming platforms. Each line represents a song, flowing through different platforms and showing its performance on each.</p>
+            
+            <h3>How to Read the Plot</h3>
+            <ul>
+                <li><strong>Vertical Axes</strong>: Each axis represents a different platform (Spotify, YouTube, TikTok, etc.)</li>
+                <li><strong>Lines</strong>: Each line is a song, showing its performance across all platforms</li>
+                <li><strong>Height</strong>: Higher position on each axis means better performance on that platform</li>
+                <li><strong>Performance Threshold</strong>: Red dashed lines show the cutoff point for the selected performance level (e.g., Top 25%)</li>
+            </ul>
+            
+            <h3>Performance Filtering</h3>
+            <ul>
+                <li><strong>All Songs</strong>: Shows all songs in the dataset</li>
+                <li><strong>Top 25%</strong>: Highlights songs that maintain top 25% performance across platforms</li>
+                <li><strong>Top 50%</strong>: Shows songs in the upper half of performance</li>
+                <li><strong>Top 75%</strong>: Displays songs above the 25th percentile</li>
+            </ul>
+            
+            <h3>Interactive Features</h3>
+            <ul>
+                <li>Hover over lines to highlight specific songs and see details</li>
+                <li>Use the genre selector to focus on specific music types</li>
+                <li>Use the performance selector to focus on top-performing songs</li>
+                <li>Red dashed lines show the threshold for each platform</li>
+            </ul>
         </div>
         
         <div class="controls">
-            <label for="platform-selector">Filter by Platform:</label>
-            <select id="platform-selector">
-                <option value="all" selected>All Platforms</option>
-                <option value="Spotify">Spotify</option>
-                <option value="YouTube">YouTube</option>
-                <option value="TikTok">TikTok</option>
-                <option value="Apple_Music">Apple Music</option>
-                <option value="SiriusXM">SiriusXM</option>
-                <option value="Deezer">Deezer</option>
-                <option value="Amazon">Amazon</option>
-                <option value="Pandora">Pandora</option>
-                <option value="Shazam">Shazam</option>
-            </select>
+            <a href="index.html" class="back-btn">← Back to Menu</a>
+            <div class="control-group">
+                <label for="genre-selector">Genre:</label>
+                <select id="genre-selector">
+                    <option value="all">All Genres</option>
+                </select>
+            </div>
         </div>
-        
-        <div id="visualization"></div>
+
+        <div id="parallel-plot"></div>
+        <div id="tooltip"></div>
     </div>
-    
-    <script src="js/load_data.js"></script>
-    <script src="js/process_data.js"></script>
-    <script src="js/visualization.js"></script>
+    <script src="platform_parallel.js"></script>
 </body>
 </html> 
